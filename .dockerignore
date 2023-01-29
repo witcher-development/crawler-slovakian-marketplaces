@@ -1,0 +1,7 @@
+Dockerfile
+node_modules
+npm-debug.log
+postgres-data
+.idea
+postgres-data-prod
+postgres-data/**
