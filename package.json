@@ -7,8 +7,8 @@
     "dev": "npx nodemon"
   },
   "devDependencies": {
-    "@types/node": "^18.6.1",
     "@types/jsdom": "*",
+    "@types/node": "^18.6.1",
     "@typescript-eslint/eslint-plugin": "^5.31.0",
     "eslint": "^8.20.0",
     "nodemon": "^2.0.19",
@@ -28,7 +28,9 @@
   },
   "homepage": "https://github.com/witcher-development/crawler-slovakian-marketplaces#readme",
   "dependencies": {
+    "@types/mongoose": "^5.11.97",
+    "got": "*",
     "jsdom": "*",
-    "got": "*"
+    "mongoose": "^6.9.0"
   }
 }
