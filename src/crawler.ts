@@ -1,7 +1,7 @@
 import got, { Response } from 'got';
 import * as $jsdom from 'jsdom';
 
-import { Product } from './db.js';
+import { Product, IProduct } from './db.js';
 
 const jsdom = $jsdom.JSDOM;
 
@@ -56,18 +56,24 @@ const getPostsData = (
   response: Response<any>,
   category: string,
   subCategory: string,
-) => {
+): IProduct[] => {
   const { window } = new jsdom(response.body);
   const $ = window.document;
   return Array.from<Element>($.querySelectorAll('.inzeraty')).map((e) => {
-    const postName = e.querySelector('h2')?.textContent || '';
-    const postViews =
+    const name = e.querySelector('h2')?.textContent || '';
+    const price = e.querySelector('.inzeratycena')?.textContent || '';
+    const views =
       e.querySelector('.inzeratyview')?.textContent?.split(' ') || '';
+    const id = e.querySelector<HTMLLinkElement>('.inzeratynadpis a')?.href.split('/') || '';
+    const badge = e.querySelector<HTMLLinkElement>('.ztop');
     return {
-      name: postName,
-      views: postViews[0],
+      name,
+      price,
+      views: Number(views[0]),
       category,
       subCategory,
+      id: id[2],
+      isPromoted: !!badge
     };
   });
 };

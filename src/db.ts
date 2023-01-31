@@ -10,18 +10,24 @@ mongoose.connect(uri, { user: 'root', pass: 'root' }, (err: any) => {
   }
 });
 
-export interface IProduct extends mongoose.Document {
+export interface IProduct {
   name: string;
+  price: string;
   views: number;
   category: string;
   subCategory: string;
+  id: string;
+  isPromoted: boolean;
 }
 
 export const ProductSchema = new mongoose.Schema({
   name: { type: String, required: true },
+  price: { type: String, required: true },
   views: { type: Number, required: true },
   category: { type: String, required: true },
   subCategory: { type: String, required: true },
+  id: { type: String, required: true },
+  isPromoted: { type: Boolean, required: true },
 });
 
 export const Product = mongoose.model<IProduct>('Product', ProductSchema);
