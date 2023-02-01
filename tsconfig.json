@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es5",
     "module": "node16",
-    "lib": ["es6", "dom"],
+    "lib": ["es6", "dom", "es2021"],
     "allowJs": true,
     "outDir": "build",
     "rootDir": "src",

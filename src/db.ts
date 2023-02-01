@@ -18,6 +18,8 @@ export interface IProduct {
   subCategory: string;
   id: string;
   isPromoted: boolean;
+  location: string;
+  productDate: string;
 }
 
 export const ProductSchema = new mongoose.Schema({
@@ -28,6 +30,13 @@ export const ProductSchema = new mongoose.Schema({
   subCategory: { type: String, required: true },
   id: { type: String, required: true },
   isPromoted: { type: Boolean, required: true },
+  location: { type: String, required: true },
+  productDate: { type: String, required: true },
 });
 
 export const Product = mongoose.model<IProduct>('Product', ProductSchema);
+export const Stats = mongoose.model('Stats', new mongoose.Schema({
+  allProducts: { type: Number, required: true },
+  newPerDay: { type: Number, required: true },
+  subCategories: { type: Object, required: true }
+}))
