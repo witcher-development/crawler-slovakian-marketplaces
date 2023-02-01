@@ -1,7 +1,7 @@
 import got, { Response } from 'got';
 import * as $jsdom from 'jsdom';
 
-import { Product, IProduct, Stats } from './db.js';
+import { Product, IProduct, Stats, connect, disconnect } from './db.js';
 
 const jsdom = $jsdom.JSDOM;
 
@@ -22,7 +22,7 @@ const getLinksList = (response: Response<any>, selector: string) => {
   );
 };
 
-const getMainPageStats = (response: Response<any>) => {
+const getMainPageStats = (response: Response<any>, date: string) => {
   const { window } = new jsdom(response.body);
   const $ = window.document;
   const allProducts =
@@ -32,7 +32,8 @@ const getMainPageStats = (response: Response<any>) => {
   return {
     allProducts: Number(allProducts),
     newPerDay: Number(newPerDay),
-    subCategories: {}
+    subCategories: {},
+    crawlerDate: date,
   };
 };
 
@@ -80,6 +81,7 @@ const getPostsData = (
   response: Response<any>,
   category: string,
   subCategory: string,
+  date: string,
 ): IProduct[] => {
   const { window } = new jsdom(response.body);
   const $ = window.document;
@@ -107,6 +109,7 @@ const getPostsData = (
       isPromoted: !!badge,
       location,
       productDate: productDate[1],
+      crawlerDate: date,
     };
   });
 };
@@ -117,7 +120,7 @@ const insetProducts = (
   subCatName: string,
   offset: number,
 ) => {
-  Product.insertMany(products)
+  return Product.insertMany(products)
     .then(function () {
       console.log(
         `Data inserted - [${catName}] - [${subCatName}] - [${offset}]`,
@@ -129,48 +132,48 @@ const insetProducts = (
         products,
         error,
       );
+      throw new Error("can't insert product data")
     });
 };
 
 const bazosCrawler = async () => {
+  await connect();
+
+  const crawlerDate = new Date().toISOString();
+
   const mainPage = await got.get('https://www.bazos.sk/');
   const categories = cutNotInterestingCategories(
     getLinksList(mainPage, '.nadpisnahlavni a'),
   );
   const catsTree: { [key: string]: Category[] } = {};
-  const stats = getMainPageStats(mainPage);
+  const stats = getMainPageStats(mainPage, crawlerDate);
 
   await new Promise<void>((resolve) => {
     categories.forEach(async (cat, i) => {
-      try {
-        const categoryPage = await got.get(cat.link);
-        const subCategories = getLinksList(categoryPage, '.barvaleva a');
-        catsTree[cat.name] = subCategories
-          .filter(({ link }) => link.startsWith('/'))
-          .map(({ name, link }) => ({
-            link: cat.link + link.slice(1),
-            name,
-          }));
+      const categoryPage = await got.get(cat.link);
+      const subCategories = getLinksList(categoryPage, '.barvaleva a');
+      catsTree[cat.name] = subCategories
+        .filter(({ link }) => link.startsWith('/'))
+        .map(({ name, link }) => ({
+          link: cat.link + link.slice(1),
+          name,
+        }));
 
-        // console.log(cat.name, catsTree[cat.name])
+      // console.log(cat.name, catsTree[cat.name])
 
-        if (i === categories.length - 1) {
-          resolve();
-        }
-      } catch (e) {
-        console.log('ERROR in step 2', e);
-        return;
+      if (i === categories.length - 1) {
+        resolve();
       }
     });
   });
 
-  for await (const [catName, subcategories] of Object.entries(catsTree)) {
+  for await (const [catName, subcategories] of [Object.entries(catsTree)[0]]) {
     const devSubCats = [subcategories[0], subcategories[1]];
 
     for await (const { name: subCatName, link } of devSubCats) {
       const firstPage = await got.get(`${link}?order=3`);
-      const firstPageProducts = getPostsData(firstPage, catName, subCatName);
-      // insetProducts(firstPageProducts, catName, subCatName, 0);
+      const firstPageProducts = getPostsData(firstPage, catName, subCatName, crawlerDate);
+      insetProducts(firstPageProducts, catName, subCatName, 0);
       const pagination = getPagination(firstPage);
       const devPagination = { totalPages: 5, perPage: 20 };
 
@@ -180,19 +183,16 @@ const bazosCrawler = async () => {
       const offsets = Array(devPagination.totalPages)
         .fill(null)
         .map((_, i) => (i + 1) * devPagination.perPage);
-      // for await (const offset of offsets) {
-      //   const page = await got.get(`${link}${offset}/?order=3`);
-      //   const products = getPostsData(page, catName, subCatName);
-      //   insetProducts(products, catName, subCatName, offset);
-      // }
+      for await (const offset of offsets) {
+        const page = await got.get(`${link}${offset}/?order=3`);
+        const products = getPostsData(page, catName, subCatName, crawlerDate);
+        insetProducts(products, catName, subCatName, offset);
+      }
     }
   }
 
-  console.log(stats)
-  Stats.create(stats)
-  // insert stats per day
+  Stats.create(stats);
+  disconnect();
 };
 
-// bazosCrawler();
-
-Stats.find().then(console.log)
+bazosCrawler();
