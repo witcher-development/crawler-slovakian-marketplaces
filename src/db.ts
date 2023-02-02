@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose';
+import { log } from "./logger.js";
 
 const uri: string = 'mongodb://127.0.0.1:27017/local?authSource=admin';
 
@@ -6,13 +7,17 @@ let db: mongoose.Mongoose;
 export const connect = async () => {
   try {
     db = await mongoose.connect(uri, { user: 'root', pass: 'root' });
-    console.log("DB connection successful")
-  } catch (e) {
-    console.log("DB connection failed", e)
+    log("DB connection successful")
+  } catch (e: any) {
+    log("DB connection failed")
+    log(e)
   }
 }
 export const disconnect = () => {
-  setTimeout(db.disconnect, 2000)
+  setTimeout(() => {
+    db.disconnect();
+    log("DB disconnected")
+  }, 2000)
 }
 
 export interface IProduct {

@@ -2,6 +2,7 @@ import got, { Response } from 'got';
 import * as $jsdom from 'jsdom';
 
 import { Product, IProduct, Stats, connect, disconnect } from './db.js';
+import { log } from './logger.js';
 
 const jsdom = $jsdom.JSDOM;
 
@@ -122,24 +123,20 @@ const insetProducts = (
 ) => {
   return Product.insertMany(products)
     .then(function () {
-      console.log(
-        `Data inserted - [${catName}] - [${subCatName}] - [${offset}]`,
-      );
+      log(`Data inserted - [${catName}] - [${subCatName}] - [${offset}]`);
     })
     .catch(function (error) {
-      console.log(
-        `Data failed - [${catName}] - [${subCatName}] - [${offset}]`,
-        products,
-        error,
-      );
-      throw new Error("can't insert product data")
+      log(`Data failed - [${catName}] - [${subCatName}] - [${offset}]`);
+      log(JSON.stringify(products));
+      log(error);
     });
 };
 
-const bazosCrawler = async () => {
-  await connect();
-
+export const bazosCrawler = async () => {
   const crawlerDate = new Date().toISOString();
+  log("Crawler timestamp: " + crawlerDate)
+
+  await connect();
 
   const mainPage = await got.get('https://www.bazos.sk/');
   const categories = cutNotInterestingCategories(
@@ -168,17 +165,23 @@ const bazosCrawler = async () => {
   });
 
   for await (const [catName, subcategories] of [Object.entries(catsTree)[0]]) {
-    const devSubCats = [subcategories[0], subcategories[1]];
+    const devSubCats = [subcategories[0]];
 
     for await (const { name: subCatName, link } of devSubCats) {
       const firstPage = await got.get(`${link}?order=3`);
-      const firstPageProducts = getPostsData(firstPage, catName, subCatName, crawlerDate);
+      const firstPageProducts = getPostsData(
+        firstPage,
+        catName,
+        subCatName,
+        crawlerDate,
+      );
       insetProducts(firstPageProducts, catName, subCatName, 0);
       const pagination = getPagination(firstPage);
-      const devPagination = { totalPages: 5, perPage: 20 };
+      const devPagination = { totalPages: 1, perPage: 20 };
 
       // @ts-ignore
-      stats.subCategories[`${catName}/${subCatName}`] = getSubCatStats(firstPage);
+      stats.subCategories[`${catName}/${subCatName}`] =
+        getSubCatStats(firstPage);
 
       const offsets = Array(devPagination.totalPages)
         .fill(null)
