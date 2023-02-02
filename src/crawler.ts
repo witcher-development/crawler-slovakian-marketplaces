@@ -164,10 +164,8 @@ export const bazosCrawler = async () => {
     });
   });
 
-  for await (const [catName, subcategories] of [Object.entries(catsTree)[0]]) {
-    const devSubCats = [subcategories[0]];
-
-    for await (const { name: subCatName, link } of devSubCats) {
+  for await (const [catName, subcategories] of Object.entries(catsTree)) {
+    for await (const { name: subCatName, link } of subcategories) {
       const firstPage = await got.get(`${link}?order=3`);
       const firstPageProducts = getPostsData(
         firstPage,
@@ -177,15 +175,15 @@ export const bazosCrawler = async () => {
       );
       insetProducts(firstPageProducts, catName, subCatName, 0);
       const pagination = getPagination(firstPage);
-      const devPagination = { totalPages: 1, perPage: 20 };
+      // const devPagination = { totalPages: 1, perPage: 20 };
 
       // @ts-ignore
       stats.subCategories[`${catName}/${subCatName}`] =
         getSubCatStats(firstPage);
 
-      const offsets = Array(devPagination.totalPages)
+      const offsets = Array(pagination.totalPages)
         .fill(null)
-        .map((_, i) => (i + 1) * devPagination.perPage);
+        .map((_, i) => (i + 1) * pagination.perPage);
       for await (const offset of offsets) {
         const page = await got.get(`${link}${offset}/?order=3`);
         const products = getPostsData(page, catName, subCatName, crawlerDate);
