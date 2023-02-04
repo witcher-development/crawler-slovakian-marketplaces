@@ -6,6 +6,17 @@ import { log } from './logger.js';
 
 const jsdom = $jsdom.JSDOM;
 
+const client = got.extend({
+  headers: {
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+    'Referer': 'https://www.google.com/'
+  },
+  retry: {
+    limit: 10,
+    calculateDelay: () => 10000
+  }
+});
+
 type Category = {
   link: string;
   name: string;
@@ -138,7 +149,7 @@ export const bazosCrawler = async () => {
 
   await connect();
 
-  const mainPage = await got.get('https://www.bazos.sk/');
+  const mainPage = await client.get('https://www.bazos.sk/');
   const categories = cutNotInterestingCategories(
     getLinksList(mainPage, '.nadpisnahlavni a'),
   );
@@ -147,7 +158,7 @@ export const bazosCrawler = async () => {
 
   await new Promise<void>((resolve) => {
     categories.forEach(async (cat, i) => {
-      const categoryPage = await got.get(cat.link);
+      const categoryPage = await client.get(cat.link);
       const subCategories = getLinksList(categoryPage, '.barvaleva a');
       catsTree[cat.name] = subCategories
         .filter(({ link }) => link.startsWith('/'))
@@ -168,14 +179,15 @@ export const bazosCrawler = async () => {
   for await (const [catName, subcategories] of Object.entries(catsTree)) {
     // for await (const { name: subCatName, link } of [subcategories[0]]) {
     for await (const { name: subCatName, link } of subcategories) {
-      const firstPage = await got.get(`${link}?order=3`);
+      const firstPage = await client.get(`${link}?order=3`).catch(e => console.log(link, e));
+      if (!firstPage) return;
       const firstPageProducts = getPostsData(
         firstPage,
         catName,
         subCatName,
         crawlerDate,
       );
-      insetProducts(firstPageProducts, catName, subCatName, 0);
+      await insetProducts(firstPageProducts, catName, subCatName, 0);
       // const pagination = { totalPages: 1, perPage: 20 };
       const pagination = getPagination(firstPage);
       // const devPagination = { totalPages: 1, perPage: 20 };
@@ -188,15 +200,19 @@ export const bazosCrawler = async () => {
         .fill(null)
         .map((_, i) => (i + 1) * pagination.perPage);
       for await (const offset of offsets) {
-        const page = await got.get(`${link}${offset}/?order=3`);
+        const page = await client.get(`${link}${offset}/?order=3`).catch(e => console.log(link, e));
+        if (!page) return;
         const products = getPostsData(page, catName, subCatName, crawlerDate);
-        insetProducts(products, catName, subCatName, offset);
+        await insetProducts(products, catName, subCatName, offset);
       }
     }
   }
 
   Stats.create(stats);
   disconnect();
+
+  const crawlerEndDate = new Date().toISOString();
+  log("Crawler end timestamp: " + crawlerEndDate)
 };
 
 bazosCrawler();
