@@ -47,7 +47,7 @@ export const ProductSchema = new mongoose.Schema({
 });
 
 export const Product = mongoose.model<IProduct>('Product', ProductSchema);
-export const Stats = mongoose.model('Stats', new mongoose.Schema({
+export const Stats = mongoose.model('ProductsStats', new mongoose.Schema({
   crawlerDate: { type: String, required: true },
   allProducts: { type: Number, required: true },
   newPerDay: { type: Number, required: true },

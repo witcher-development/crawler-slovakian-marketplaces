@@ -397,3 +397,4 @@ Temporary Items
 .env
 dist
 postgres-data
+build

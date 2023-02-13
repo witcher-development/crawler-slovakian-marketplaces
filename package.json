@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "npx nodemon",
-    "start": "ts-node --esm ./src/crawler.ts"
+    "start": "ts-node --esm ./src/crawler.ts",
+    "build": "tsc"
   },
   "devDependencies": {
     "@types/jsdom": "*",
