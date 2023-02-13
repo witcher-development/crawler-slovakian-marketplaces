@@ -166,7 +166,7 @@ export const bazosCrawler = async () => {
 
   for await (const [catName, subcategories] of Object.entries(catsTree)) {
     for await (const { name: subCatName, link } of subcategories) {
-      const firstPage = await got.get(`${link}?order=3`);
+      const firstPage = await got.get(`${link}`);
       const firstPageProducts = getPostsData(
         firstPage,
         catName,
@@ -185,7 +185,7 @@ export const bazosCrawler = async () => {
         .fill(null)
         .map((_, i) => (i + 1) * pagination.perPage);
       for await (const offset of offsets) {
-        const page = await got.get(`${link}${offset}/?order=3`);
+        const page = await got.get(`${link}${offset}/`);
         const products = getPostsData(page, catName, subCatName, crawlerDate);
         insetProducts(products, catName, subCatName, offset);
       }
