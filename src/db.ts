@@ -44,9 +44,9 @@ export const ProductSchema = new mongoose.Schema({
   location: { type: String, required: true },
   productDate: { type: String, required: true },
   crawlerDate: { type: String, required: true },
-});
+}, { collection: "products" });
 
-export const Product = mongoose.model<IProduct>('Product', ProductSchema);
+export const Product = mongoose.model<IProduct>('Products', ProductSchema);
 export const Stats = mongoose.model('ProductsStats', new mongoose.Schema({
   crawlerDate: { type: String, required: true },
   allProducts: { type: Number, required: true },

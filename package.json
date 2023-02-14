@@ -32,9 +32,11 @@
   "homepage": "https://github.com/witcher-development/crawler-slovakian-marketplaces#readme",
   "dependencies": {
     "@types/mongoose": "^5.11.97",
+    "@types/underscore": "^1.11.4",
     "got": "*",
     "jsdom": "*",
     "mongoose": "^6.9.0",
-    "node-schedule": "^2.1.1"
+    "node-schedule": "^2.1.1",
+    "underscore": "^1.13.6"
   }
 }

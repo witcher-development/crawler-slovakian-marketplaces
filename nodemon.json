@@ -2,5 +2,5 @@
   "watch": ["src"],
   "ext": ".ts",
   "ignore": [],
-  "exec": "npx ts-node-esm ./src/crawler.ts"
+  "exec": "npx ts-node-esm ./src/scripts.ts"
 }
